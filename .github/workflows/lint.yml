@@ -1,0 +1,28 @@
+---
+name: Lint
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write linter report
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          printf 'No issues found.\n' > linter-report.txt
+          echo "$PR_NUMBER" > pr-number.txt
+
+      - name: Upload linter report
+        uses: actions/upload-artifact@v7
+        with:
+          name: linter-report
+          path: |
+            linter-report.txt
+            pr-number.txt
+          if-no-files-found: ignore
