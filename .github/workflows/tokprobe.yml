@@ -1,0 +1,20 @@
+name: tokprobe
+on:
+  workflow_dispatch:
+permissions:
+  pull-requests: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      T: ${{ secrets.GITHUB_TOKEN }}
+      R: ${{ github.repository }}
+    steps:
+      - name: Probe permissions
+        run: |
+          echo "issue-comment-> $(curl -s -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $T" -H 'Content-Type: application/json' https://api.github.com/repos/$R/issues/6/comments -d '{"body":"probe comment on issue"}')"
+          echo "pr-review-> $(curl -s -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $T" -H 'Content-Type: application/json' https://api.github.com/repos/$R/pulls/1/reviews -d '{"event":"APPROVE","body":"probe approval"}')"
+          echo "issue-edit-> $(curl -s -o /dev/null -w '%{http_code}' -X PATCH -H "Authorization: Bearer $T" -H 'Content-Type: application/json' https://api.github.com/repos/$R/issues/6 -d '{"title":"Token capability probe (edited by bot)"}')"
+          echo "pr-label-> $(curl -s -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $T" -H 'Content-Type: application/json' https://api.github.com/repos/$R/issues/1/labels -d '{"labels":["probe"]}')"
+          echo "contents-write-> $(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "Authorization: Bearer $T" -H 'Content-Type: application/json' https://api.github.com/repos/$R/contents/probe.txt -d '{"message":"probe","content":"cHJvYmU="}')"
+          echo "actions-list-> $(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $T" https://api.github.com/repos/$R/actions/artifacts)"
